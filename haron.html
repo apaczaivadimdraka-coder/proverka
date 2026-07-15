@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Telegram Mini App</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Telegram Web App SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    /* плавное появление контента */
+    .content-panel {
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    .content-panel.hidden {
+      opacity: 0;
+      transform: scale(0.96);
+      pointer-events: none;
+      position: absolute;
+    }
+    .content-panel:not(.hidden) {
+      opacity: 1;
+      transform: scale(1);
+      position: relative;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between p-4 font-sans select-none"
+      style="background-color: var(--tg-theme-bg-color, #000000); color: var(--tg-theme-text-color, #ffffff);">
+
+  <!-- Основной контент -->
+  <main class="flex-1 flex items-center justify-center relative">
+    <!-- Панель "Главная" -->
+    <div id="panel-dashboard" class="content-panel w-full max-w-md mx-auto">
+      <div class="bg-zinc-900/60 backdrop-blur-sm rounded-2xl p-6 border border-zinc-800/50 text-center">
+        <h2 class="text-2xl font-bold mb-4">🏠 Главная</h2>
+        <p class="text-zinc-400">Добро пожаловать в ваше мини-приложение!</p>
+        <p class="text-sm text-zinc-500 mt-6">Здесь может быть ваш контент.</p>
+      </div>
+    </div>
+
+    <!-- Панель "Профиль" -->
+    <div id="panel-profile" class="content-panel hidden w-full max-w-md mx-auto">
+      <div class="bg-zinc-900/60 backdrop-blur-sm rounded-2xl p-6 border border-zinc-800/50 text-center">
+        <!-- Аватар -->
+        <div id="avatar-container" class="mx-auto w-24 h-24 rounded-full bg-zinc-700 flex items-center justify-center text-4xl mb-4 overflow-hidden border-2 border-blue-500/30">
+          <span id="avatar-placeholder">👤</span>
+        </div>
+        <!-- Имя -->
+        <h2 id="user-name" class="text-xl font-semibold">Загрузка...</h2>
+        <!-- Username -->
+        <p id="user-username" class="text-sm text-zinc-400 mt-1">@username</p>
+        <!-- Доп. данные -->
+        <p id="user-language" class="text-xs text-zinc-500 mt-2">Язык: —</p>
+        <p id="user-id" class="text-xs text-zinc-500">ID: —</p>
+
+        <!-- Кнопка закрыть приложение -->
+        <button id="close-app" class="mt-6 px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-full text-white text-sm font-medium transition-colors">
+          Закрыть
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Нижняя панель навигации (фиксирована) -->
+  <div class="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md z-50 transition-all duration-[450ms] ease-in-out">
+    <article class="border border-solid border-zinc-800/80 w-full rounded-2xl flex shadow-2xl shadow-black/50 bg-zinc-900/90 backdrop-blur-md">
+      <!-- Кнопка "Главная" -->
+      <label class="has-[:checked]:shadow-inner relative w-full h-16 p-4 ease-in-out duration-300 border-solid border-zinc-800/30 has-[:checked]:border-zinc-700 group flex flex-row gap-3 items-center justify-center text-zinc-400 rounded-xl cursor-pointer"
+             for="dashboard">
+        <input id="dashboard" name="path" type="radio" class="hidden peer/expand" checked />
+        <svg viewBox="0 0 24 24" height="24" width="24" xmlns="http://www.w3.org/2000/svg"
+             class="peer-hover/expand:scale-125 peer-hover/expand:text-blue-400 peer-hover/expand:fill-blue-400 peer-checked/expand:text-blue-400 peer-checked/expand:fill-blue-400 peer-checked/expand:scale-125 ease-in-out duration-300 text-zinc-400 fill-zinc-400">
+          <path d="M4 13h6a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1zm-1 7a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v4zm10 0a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-7a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v7zm1-10h6a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1z" />
+        </svg>
+      </label>
+
+      <!-- Кнопка "Профиль" -->
+      <label class="has-[:checked]:shadow-inner relative w-full h-16 p-4 ease-in-out duration-300 border-solid border-zinc-800/30 has-[:checked]:border-zinc-700 group flex flex-row gap-3 items-center justify-center text-zinc-400 rounded-xl cursor-pointer"
+             for="profile">
+        <input id="profile" name="path" type="radio" class="hidden peer/expand" />
+        <svg viewBox="0 0 24 24" height="24" width="24" xmlns="http://www.w3.org/2000/svg"
+             class="peer-hover/expand:scale-125 peer-hover/expand:text-blue-400 peer-hover/expand:fill-blue-400 peer-checked/expand:text-blue-400 peer-checked/expand:fill-blue-400 peer-checked/expand:scale-125 ease-in-out duration-300 text-zinc-400 fill-zinc-400">
+          <path d="M12 2a5 5 0 1 0 5 5 5 5 0 0 0-5-5zm0 8a3 3 0 1 1 3-3 3 3 0 0 1-3 3zm9 11v-1a7 7 0 0 0-7-7h-4a7 7 0 0 0-7 7v1h2v-1a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v1z" />
+        </svg>
+      </label>
+    </article>
+  </div>
+
+  <script>
+    (function() {
+      // --- 1. Инициализация Telegram Web App ---
+      const tg = window.Telegram?.WebApp;
+      if (!tg) {
+        console.warn('Telegram Web App SDK не загружен. Приложение работает вне Telegram.');
+      } else {
+        tg.ready(); // сообщаем, что приложение готово
+        // Получаем данные пользователя
+        const user = tg.initDataUnsafe?.user;
+        if (user) {
+          // Заполняем профиль
+          const nameEl = document.getElementById('user-name');
+          const usernameEl = document.getElementById('user-username');
+          const langEl = document.getElementById('user-language');
+          const idEl = document.getElementById('user-id');
+          const avatarPlaceholder = document.getElementById('avatar-placeholder');
+
+          // Имя (first_name + last_name)
+          let fullName = user.first_name || '';
+          if (user.last_name) fullName += ' ' + user.last_name;
+          nameEl.textContent = fullName || 'Пользователь';
+
+          // Username
+          usernameEl.textContent = user.username ? '@' + user.username : '—';
+
+          // Язык
+          langEl.textContent = 'Язык: ' + (user.language_code || '—');
+
+          // ID
+          idEl.textContent = 'ID: ' + (user.id || '—');
+
+          // Аватар (если есть photo_url, можно установить картинку)
+          if (user.photo_url) {
+            const img = document.createElement('img');
+            img.src = user.photo_url;
+            img.alt = 'avatar';
+            img.className = 'w-full h-full object-cover';
+            const container = document.getElementById('avatar-container');
+            // заменяем placeholder на img
+            container.innerHTML = '';
+            container.appendChild(img);
+          } else {
+            // Можно установить инициалы или эмодзи
+            const initial = (user.first_name ? user.first_name[0] : '?').toUpperCase();
+            avatarPlaceholder.textContent = initial;
+          }
+        } else {
+          // Если пользователь не авторизован (тестовый режим)
+          document.getElementById('user-name').textContent = 'Гость';
+          document.getElementById('user-username').textContent = '—';
+          document.getElementById('user-language').textContent = 'Язык: —';
+          document.getElementById('user-id').textContent = 'ID: —';
+        }
+
+        // Настраиваем тему (цвета из Telegram)
+        if (tg.themeParams) {
+          const bg = tg.themeParams.bg_color || '#000000';
+          const text = tg.themeParams.text_color || '#ffffff';
+          document.body.style.backgroundColor = bg;
+          document.body.style.color = text;
+          // Можно также применить к другим элементам
+        }
+
+        // Кнопка закрытия
+        document.getElementById('close-app').addEventListener('click', function() {
+          tg.close();
+        });
+      }
+
+      // --- 2. Переключение вкладок (без перезагрузки) ---
+      const dashboardRadio = document.getElementById('dashboard');
+      const profileRadio = document.getElementById('profile');
+      const panelDashboard = document.getElementById('panel-dashboard');
+      const panelProfile = document.getElementById('panel-profile');
+
+      function switchTab(tab) {
+        if (tab === 'dashboard') {
+          panelDashboard.classList.remove('hidden');
+          panelProfile.classList.add('hidden');
+        } else if (tab === 'profile') {
+          panelProfile.classList.remove('hidden');
+          panelDashboard.classList.add('hidden');
+        }
+      }
+
+      // Слушаем изменения радио-кнопок
+      dashboardRadio.addEventListener('change', function() {
+        if (this.checked) switchTab('dashboard');
+      });
+      profileRadio.addEventListener('change', function() {
+        if (this.checked) switchTab('profile');
+      });
+
+      // Начальное состояние (checked уже стоит на dashboard, но убедимся)
+      if (dashboardRadio.checked) {
+        switchTab('dashboard');
+      } else if (profileRadio.checked) {
+        switchTab('profile');
+      } else {
+        // по умолчанию
+        dashboardRadio.checked = true;
+        switchTab('dashboard');
+      }
+
+      // --- 3. Дополнительно: обработка свайпов/кликов вне label (необязательно) ---
+      // Можно добавить, но для простоты оставляем так.
+    })();
+  </script>
+</body>
+</html>
