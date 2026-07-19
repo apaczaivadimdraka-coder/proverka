@@ -1,201 +1,310 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Telegram Mini App</title>
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>TWA App</title>
+  
   <!-- Telegram Web App SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Настройки цветов -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            appBg: '#0e0e12',
+            cardBg: '#181820',
+            cardBorder: '#262632',
+            textMuted: '#8b8b99',
+            accent: '#4f46e5', // Цвет индиго для акцентов
+          }
+        }
+      }
+    }
+  </script>
+
   <style>
-    /* плавное появление контента */
-    .content-panel {
-      transition: opacity 0.3s ease, transform 0.3s ease;
-    }
-    .content-panel.hidden {
-      opacity: 0;
-      transform: scale(0.96);
-      pointer-events: none;
-      position: absolute;
-    }
-    .content-panel:not(.hidden) {
-      opacity: 1;
-      transform: scale(1);
-      position: relative;
-    }
+    /* Прячем скроллбар */
+    ::-webkit-scrollbar { width: 0px; background: transparent; }
+    body { -webkit-tap-highlight-color: transparent; }
+    
+    /* Анимация клика для кнопки */
+    .click-anim:active { transform: scale(0.95); }
+    
+    /* Красивое свечение для кнопки кликера */
+    .glow-effect { box-shadow: 0 0 40px rgba(79, 70, 229, 0.4); }
   </style>
 </head>
-<body class="min-h-screen flex flex-col justify-between p-4 font-sans select-none"
-      style="background-color: var(--tg-theme-bg-color, #000000); color: var(--tg-theme-text-color, #ffffff);">
+<body class="bg-appBg text-white font-sans h-screen flex flex-col overflow-hidden">
 
-  <!-- Основной контент -->
-  <main class="flex-1 flex items-center justify-center relative">
-    <!-- Панель "Главная" -->
-    <div id="panel-dashboard" class="content-panel w-full max-w-md mx-auto">
-      <div class="bg-zinc-900/60 backdrop-blur-sm rounded-2xl p-6 border border-zinc-800/50 text-center">
-        <h2 class="text-2xl font-bold mb-4">🏠 Главная</h2>
-        <p class="text-zinc-400">Добро пожаловать в наше мини-приложение!</p>
-        <p class="text-sm text-zinc-500 mt-6">Здесь может быть ваш контент.</p>
+  <!-- ================= HEADER ================= -->
+  <header class="flex justify-between items-center p-5 pt-6 bg-appBg/90 backdrop-blur-md z-40 shrink-0">
+    <h1 id="page-title" class="text-2xl font-bold tracking-wide transition-opacity duration-300">Профиль</h1>
+    
+    <!-- Кнопка настроек -->
+    <div class="relative">
+      <button id="settings-btn" class="p-2 bg-cardBg rounded-full border border-cardBorder text-textMuted hover:text-white transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </button>
+
+      <!-- Выпадающее меню языка -->
+      <div id="lang-menu" class="hidden absolute right-0 mt-2 w-40 bg-cardBg border border-cardBorder rounded-xl shadow-xl overflow-hidden z-50">
+        <div class="flex flex-col">
+          <button onclick="setLanguage('ru')" class="flex items-center px-4 py-3 hover:bg-white/5 transition-colors text-sm font-medium border-b border-cardBorder">
+            🇷🇺 Russian (RU)
+          </button>
+          <button onclick="setLanguage('en')" class="flex items-center px-4 py-3 hover:bg-white/5 transition-colors text-sm font-medium">
+            🇬🇧 English (EN)
+          </button>
+        </div>
       </div>
     </div>
+  </header>
 
-    <!-- Панель "Профиль" -->
-    <div id="panel-profile" class="content-panel hidden w-full max-w-md mx-auto">
-      <div class="bg-zinc-900/60 backdrop-blur-sm rounded-2xl p-6 border border-zinc-800/50 text-center">
-        <!-- Аватар -->
-        <div id="avatar-container" class="mx-auto w-24 h-24 rounded-full bg-zinc-700 flex items-center justify-center text-4xl mb-4 overflow-hidden border-2 border-blue-500/30">
-          <span id="avatar-placeholder">👤</span>
+  <!-- ================= MAIN CONTENT AREA ================= -->
+  <main class="flex-1 overflow-y-auto px-4 pb-28 flex flex-col relative">
+    
+    <!-- === VIEW: DASHBOARD (ГЛАВНАЯ) === -->
+    <div id="view-dashboard" class="hidden flex-col items-center justify-center flex-1 h-full fade-in">
+      
+      <!-- Текущий баланс на главной -->
+      <div class="mb-10 text-center">
+        <p class="text-textMuted text-sm font-medium mb-1" data-i18n="currentBalance">Текущий баланс</p>
+        <div class="text-5xl font-bold flex items-center justify-center gap-2">
+          <span class="balance-display">0</span>
         </div>
-        <!-- Имя -->
-        <h2 id="user-name" class="text-xl font-semibold">Загрузка...</h2>
-        <!-- Username -->
-        <p id="user-username" class="text-sm text-zinc-400 mt-1">@username</p>
-        <!-- Доп. данные -->
-        <p id="user-language" class="text-xs text-zinc-500 mt-2">Язык: —</p>
-        <p id="user-id" class="text-xs text-zinc-500">ID: —</p>
-
-        <!-- Кнопка закрыть приложение -->
-        <button id="close-app" class="mt-6 px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-full text-white text-sm font-medium transition-colors">
-          Закрыть
-        </button>
       </div>
+
+      <!-- Кнопка кликера -->
+      <button id="clicker-btn" class="w-48 h-48 rounded-full bg-gradient-to-tr from-indigo-600 to-blue-500 flex items-center justify-center click-anim glow-effect border-4 border-cardBg/50 relative overflow-hidden group">
+        <!-- Декоративный блик -->
+        <div class="absolute inset-0 bg-white/20 w-full h-full rotate-45 translate-x-[-150%] group-active:translate-x-[150%] transition-transform duration-500"></div>
+        
+        <span class="text-3xl font-bold text-white shadow-md select-none" data-i18n="clickMe">ТАПАЙ!</span>
+      </button>
+    </div>
+
+    <!-- === VIEW: PROFILE (ПРОФИЛЬ) === -->
+    <div id="view-profile" class="flex flex-col gap-4 fade-in">
+      
+      <!-- Карточка пользователя -->
+      <section class="bg-cardBg border border-cardBorder rounded-2xl p-5 relative overflow-hidden">
+        <div class="absolute -top-10 -right-10 w-32 h-32 bg-indigo-500/10 blur-3xl rounded-full"></div>
+        
+        <div class="flex items-center gap-4 relative z-10">
+          <div class="w-[72px] h-[72px] rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center shadow-lg">
+            <span id="avatar-letter" class="text-3xl font-bold text-white shadow-sm">U</span>
+          </div>
+          
+          <div class="flex flex-col justify-center">
+            <h2 id="username-display" class="text-xl font-bold mb-0.5">Username</h2>
+            <div class="flex items-center gap-2">
+              <span class="text-textMuted text-sm bg-appBg px-2 py-0.5 rounded-md border border-cardBorder" data-i18n="userRole">Пользователь</span>
+              <span id="userid-display" class="text-textMuted text-sm font-mono">ID 00000000</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Блок баланса (теперь один, большой) -->
+      <section class="bg-cardBg border border-cardBorder rounded-2xl p-5 flex flex-col items-center justify-center">
+        <span class="text-textMuted text-sm font-medium mb-1" data-i18n="balanceBlock">Доступный баланс</span>
+        <div class="text-3xl font-bold flex items-center gap-1.5">
+          <span class="balance-display">0</span>
+        </div>
+      </section>
+
+      <!-- Заработано за всё время -->
+      <section class="bg-cardBg border border-cardBorder rounded-2xl p-4 flex justify-between items-center mt-2">
+        <div class="flex items-center gap-3">
+          <div class="bg-indigo-500/20 text-indigo-400 p-2 rounded-full">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"></path><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+          </div>
+          <span class="text-textMuted text-sm" data-i18n="totalEarned">Заработано за всё время</span>
+        </div>
+        <div class="font-bold">
+          <span class="total-earned-display">0</span>
+        </div>
+      </section>
+
     </div>
   </main>
 
-  <!-- Нижняя панель навигации (фиксирована) -->
-  <div class="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md z-50 transition-all duration-[450ms] ease-in-out">
-    <article class="border border-solid border-zinc-800/80 w-full rounded-2xl flex shadow-2xl shadow-black/50 bg-zinc-900/90 backdrop-blur-md">
-      <!-- Кнопка "Главная" -->
-      <label class="has-[:checked]:shadow-inner relative w-full h-16 p-4 ease-in-out duration-300 border-solid border-zinc-800/30 has-[:checked]:border-zinc-700 group flex flex-row gap-3 items-center justify-center text-zinc-400 rounded-xl cursor-pointer"
-             for="dashboard">
-        <input id="dashboard" name="path" type="radio" class="hidden peer/expand" checked />
-        <svg viewBox="0 0 24 24" height="24" width="24" xmlns="http://www.w3.org/2000/svg"
-             class="peer-hover/expand:scale-125 peer-hover/expand:text-blue-400 peer-hover/expand:fill-blue-400 peer-checked/expand:text-blue-400 peer-checked/expand:fill-blue-400 peer-checked/expand:scale-125 ease-in-out duration-300 text-zinc-400 fill-zinc-400">
-          <path d="M4 13h6a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1zm-1 7a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v4zm10 0a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-7a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v7zm1-10h6a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1z" />
+  <!-- ================= BOTTOM NAVIGATION ================= -->
+  <div class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md z-50">
+    <article class="border border-cardBorder w-full rounded-2xl flex shadow-2xl shadow-black/80 bg-appBg/80 backdrop-blur-xl p-1">
+      
+      <!-- Вкладка Главная -->
+      <label class="has-[:checked]:shadow-inner relative w-full h-14 p-2 ease-in-out duration-300 border-solid border-transparent has-[:checked]:border-white/10 has-[:checked]:bg-white/5 group flex flex-row gap-3 items-center justify-center text-textMuted rounded-xl cursor-pointer" for="tab-dashboard">
+        <input id="tab-dashboard" name="nav" type="radio" class="hidden peer/expand" />
+        <svg viewBox="0 0 24 24" height="22" width="22" xmlns="http://www.w3.org/2000/svg" class="peer-hover/expand:scale-110 peer-hover/expand:text-indigo-400 peer-hover/expand:fill-indigo-400 peer-checked/expand:text-indigo-400 peer-checked/expand:fill-indigo-400 peer-checked/expand:scale-110 ease-in-out duration-300 text-textMuted fill-textMuted transition-all">
+          <path d="M4 13h6a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1zm-1 7a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v4zm10 0a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-7a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v7zm1-10h6a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1z"></path>
         </svg>
       </label>
 
-      <!-- Кнопка "Профиль" -->
-      <label class="has-[:checked]:shadow-inner relative w-full h-16 p-4 ease-in-out duration-300 border-solid border-zinc-800/30 has-[:checked]:border-zinc-700 group flex flex-row gap-3 items-center justify-center text-zinc-400 rounded-xl cursor-pointer"
-             for="profile">
-        <input id="profile" name="path" type="radio" class="hidden peer/expand" />
-        <svg viewBox="0 0 24 24" height="24" width="24" xmlns="http://www.w3.org/2000/svg"
-             class="peer-hover/expand:scale-125 peer-hover/expand:text-blue-400 peer-hover/expand:fill-blue-400 peer-checked/expand:text-blue-400 peer-checked/expand:fill-blue-400 peer-checked/expand:scale-125 ease-in-out duration-300 text-zinc-400 fill-zinc-400">
-          <path d="M12 2a5 5 0 1 0 5 5 5 5 0 0 0-5-5zm0 8a3 3 0 1 1 3-3 3 3 0 0 1-3 3zm9 11v-1a7 7 0 0 0-7-7h-4a7 7 0 0 0-7 7v1h2v-1a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v1z" />
+      <!-- Вкладка Профиль (Активна по умолчанию) -->
+      <label class="has-[:checked]:shadow-inner relative w-full h-14 p-2 ease-in-out duration-300 border-solid border-transparent has-[:checked]:border-white/10 has-[:checked]:bg-white/5 group flex flex-row gap-3 items-center justify-center text-textMuted rounded-xl cursor-pointer" for="tab-profile">
+        <input id="tab-profile" name="nav" type="radio" class="hidden peer/expand" checked />
+        <svg viewBox="0 0 24 24" height="22" width="22" xmlns="http://www.w3.org/2000/svg" class="peer-hover/expand:scale-110 peer-hover/expand:text-indigo-400 peer-hover/expand:fill-indigo-400 peer-checked/expand:text-indigo-400 peer-checked/expand:fill-indigo-400 peer-checked/expand:scale-110 ease-in-out duration-300 text-textMuted fill-textMuted transition-all">
+          <path d="M12 2a5 5 0 1 0 5 5 5 5 0 0 0-5-5zm0 8a3 3 0 1 1 3-3 3 3 0 0 1-3 3zm9 11v-1a7 7 0 0 0-7-7h-4a7 7 0 0 0-7 7v1h2v-1a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v1z"></path>
         </svg>
       </label>
+
     </article>
   </div>
 
+  <!-- ================= ЛОГИКА ПРИЛОЖЕНИЯ ================= -->
   <script>
-    (function() {
-      // --- 1. Инициализация Telegram Web App ---
-      const tg = window.Telegram?.WebApp;
-      if (!tg) {
-        console.warn('Telegram Web App SDK не загружен. Приложение работает вне Telegram.');
-      } else {
-        tg.ready(); // сообщаем, что приложение готово
-        // Получаем данные пользователя
-        const user = tg.initDataUnsafe?.user;
-        if (user) {
-          // Заполняем профиль
-          const nameEl = document.getElementById('user-name');
-          const usernameEl = document.getElementById('user-username');
-          const langEl = document.getElementById('user-language');
-          const idEl = document.getElementById('user-id');
-          const avatarPlaceholder = document.getElementById('avatar-placeholder');
+    // --- Инициализация Telegram SDK ---
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+    tg.setHeaderColor('#0e0e12'); 
+    tg.setBackgroundColor('#0e0e12');
 
-          // Имя (first_name + last_name)
-          let fullName = user.first_name || '';
-          if (user.last_name) fullName += ' ' + user.last_name;
-          nameEl.textContent = fullName || 'Пользователь';
+    // --- Сохранение в LocalStorage ---
+    // Читаем сохраненные данные (если их нет, ставим 0)
+    const savedBalance = parseInt(localStorage.getItem('twa_balance')) || 0;
+    const savedTotalEarned = parseInt(localStorage.getItem('twa_total_earned')) || 0;
+    const savedLang = localStorage.getItem('twa_lang') || 'ru';
 
-          // Username
-          usernameEl.textContent = user.username ? '@' + user.username : '—';
+    // --- Состояние приложения (State) ---
+    const state = {
+      balance: savedBalance,
+      totalEarned: savedTotalEarned,
+      lang: savedLang, // Берем язык из сохранения или по умолчанию 'ru'
+      currentView: 'profile' // Текущая вкладка
+    };
 
-          // Язык
-          langEl.textContent = 'Язык: ' + (user.language_code || '—');
-
-          // ID
-          idEl.textContent = 'ID: ' + (user.id || '—');
-
-          // Аватар (если есть photo_url, можно установить картинку)
-          if (user.photo_url) {
-            const img = document.createElement('img');
-            img.src = user.photo_url;
-            img.alt = 'avatar';
-            img.className = 'w-full h-full object-cover';
-            const container = document.getElementById('avatar-container');
-            // заменяем placeholder на img
-            container.innerHTML = '';
-            container.appendChild(img);
-          } else {
-            // Можно установить инициалы или эмодзи
-            const initial = (user.first_name ? user.first_name[0] : '?').toUpperCase();
-            avatarPlaceholder.textContent = initial;
-          }
-        } else {
-          // Если пользователь не авторизован (тестовый режим)
-          document.getElementById('user-name').textContent = 'Гость';
-          document.getElementById('user-username').textContent = '—';
-          document.getElementById('user-language').textContent = 'Язык: —';
-          document.getElementById('user-id').textContent = 'ID: —';
-        }
-
-        // Настраиваем тему (цвета из Telegram)
-        if (tg.themeParams) {
-          const bg = tg.themeParams.bg_color || '#000000';
-          const text = tg.themeParams.text_color || '#ffffff';
-          document.body.style.backgroundColor = bg;
-          document.body.style.color = text;
-          // Можно также применить к другим элементам
-        }
-
-        // Кнопка закрытия
-        document.getElementById('close-app').addEventListener('click', function() {
-          tg.close();
-        });
+    // --- Словари локализации ---
+    const i18n = {
+      ru: {
+        titleProfile: 'Профиль',
+        titleDashboard: 'Главная',
+        userRole: 'Пользователь',
+        balanceBlock: 'Доступный баланс',
+        totalEarned: 'Заработано за всё время',
+        currentBalance: 'Текущий баланс',
+        clickMe: 'ТАПАЙ!'
+      },
+      en: {
+        titleProfile: 'Profile',
+        titleDashboard: 'Dashboard',
+        userRole: 'User',
+        balanceBlock: 'Available Balance',
+        totalEarned: 'Total Earned',
+        currentBalance: 'Current Balance',
+        clickMe: 'TAP!'
       }
+    };
 
-      // --- 2. Переключение вкладок (без перезагрузки) ---
-      const dashboardRadio = document.getElementById('dashboard');
-      const profileRadio = document.getElementById('profile');
-      const panelDashboard = document.getElementById('panel-dashboard');
-      const panelProfile = document.getElementById('panel-profile');
+    // --- Получение данных ТГ ---
+    const user = tg.initDataUnsafe?.user || {
+      username: 'senkuro', id: 5140951410, first_name: 'Senkuro'
+    };
+    const username = user.username || user.first_name;
+    document.getElementById('username-display').textContent = username;
+    document.getElementById('userid-display').textContent = 'ID ' + user.id;
+    document.getElementById('avatar-letter').textContent = username.charAt(0).toUpperCase();
 
-      function switchTab(tab) {
-        if (tab === 'dashboard') {
-          panelDashboard.classList.remove('hidden');
-          panelProfile.classList.add('hidden');
-        } else if (tab === 'profile') {
-          panelProfile.classList.remove('hidden');
-          panelDashboard.classList.add('hidden');
-        }
-      }
+    // --- Функция обновления UI ---
+    function updateUI() {
+      // 1. Обновляем все места с балансом
+      const balanceNodes = document.querySelectorAll('.balance-display');
+      balanceNodes.forEach(node => node.textContent = state.balance.toLocaleString());
+      
+      const earnedNodes = document.querySelectorAll('.total-earned-display');
+      earnedNodes.forEach(node => node.textContent = state.totalEarned.toLocaleString());
 
-      // Слушаем изменения радио-кнопок
-      dashboardRadio.addEventListener('change', function() {
-        if (this.checked) switchTab('dashboard');
-      });
-      profileRadio.addEventListener('change', function() {
-        if (this.checked) switchTab('profile');
+      // 2. Обновляем тексты (Локализация)
+      const t = i18n[state.lang];
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (t[key]) el.textContent = t[key];
       });
 
-      // Начальное состояние (checked уже стоит на dashboard, но убедимся)
-      if (dashboardRadio.checked) {
-        switchTab('dashboard');
-      } else if (profileRadio.checked) {
-        switchTab('profile');
-      } else {
-        // по умолчанию
-        dashboardRadio.checked = true;
-        switchTab('dashboard');
-      }
+      // 3. Обновляем заголовок в шапке в зависимости от вкладки
+      document.getElementById('page-title').textContent = state.currentView === 'profile' ? t.titleProfile : t.titleDashboard;
+    }
 
-      // --- 3. Дополнительно: обработка свайпов/кликов вне label (необязательно) ---
-      // Можно добавить, но для простоты оставляем так.
-    })();
+    // --- Логика Кликера ---
+    const clickerBtn = document.getElementById('clicker-btn');
+    // Используем pointerdown для более быстрой реакции на телефонах
+    clickerBtn.addEventListener('pointerdown', (e) => {
+      // Вибрация Telegram
+      if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+      
+      // Логика начисления
+      state.balance += 1;
+      state.totalEarned += 1;
+
+      // Сохраняем обновленные данные в память телефона
+      localStorage.setItem('twa_balance', state.balance);
+      localStorage.setItem('twa_total_earned', state.totalEarned);
+
+      updateUI();
+    });
+
+    // --- Переключение Языков ---
+    const settingsBtn = document.getElementById('settings-btn');
+    const langMenu = document.getElementById('lang-menu');
+
+    settingsBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      langMenu.classList.toggle('hidden');
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!langMenu.contains(e.target) && !settingsBtn.contains(e.target)) {
+        langMenu.classList.add('hidden');
+      }
+    });
+
+    window.setLanguage = function(langCode) {
+      state.lang = langCode;
+      localStorage.setItem('twa_lang', langCode); // Сохраняем выбор языка
+      langMenu.classList.add('hidden');
+      updateUI(); // Применяем язык сразу ко всему экрану
+    };
+
+    // --- Навигация (SPA Вкладки) ---
+    const viewDashboard = document.getElementById('view-dashboard');
+    const viewProfile = document.getElementById('view-profile');
+
+    document.getElementById('tab-dashboard').addEventListener('change', (e) => {
+      if(e.target.checked) {
+        if(tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
+        viewProfile.classList.add('hidden');
+        viewDashboard.classList.remove('hidden');
+        viewDashboard.style.display = 'flex'; // Т.к. это flex-контейнер
+        state.currentView = 'dashboard';
+        updateUI(); // Обновит заголовок
+      }
+    });
+
+    document.getElementById('tab-profile').addEventListener('change', (e) => {
+      if(e.target.checked) {
+        if(tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
+        viewDashboard.style.display = 'none';
+        viewDashboard.classList.add('hidden');
+        viewProfile.classList.remove('hidden');
+        state.currentView = 'profile';
+        updateUI(); // Обновит заголовок
+      }
+    });
+
+    // --- Первичный запуск ---
+    // Выключаем отображение Dashboard, т.к. Profile активен по умолчанию
+    viewDashboard.style.display = 'none'; 
+    updateUI();
+
   </script>
 </body>
 </html>
